@@ -41,7 +41,8 @@ import Data.Maybe ( fromMaybe )
 import System.Random
 import System.Random.Shuffle ( shuffle' )
 
-data WSize = WSize Int Int
+{- WindowSize width height -}
+data WindowSize = WindowSize Int Int
 
 {- Handler of resize event -}
 {- If image is still, it will be ineffectively resized, animation will be left to default handler -}
@@ -74,7 +75,7 @@ nextImg shift ref img = do
                   ( \e -> do
                     print ( e :: SomeException )
                     uncheck ref -- Mark file as incorrect
-                    nameCopy ref >>= setClipboard -- Copy its name to buffer
+                    extractName ref >>= setClipboard -- Copy its name to buffer
                     nextImg shift ref img -- Try to load next image with same method
                   )
         else do
@@ -94,76 +95,91 @@ uncheck p = do
 
 {-Loads specified file to specified Image widged-}
 loadImage :: Image -> FilePath -> IO ()
-loadImage w f = do
-    due <- doesDirectoryExist f
-    if (due)
+loadImage imageWidget fileToDisplay = do
+    isDirectory <- doesDirectoryExist fileToDisplay
+    if ( isDirectory == True )
     then
-        error $ f ++ " is a directory, skipping"
+        error $ fileToDisplay ++ " is a directory, skipping"
     else do
-        a <- pixbufAnimationNewFromFile f
-        que <- pixbufAnimationIsStaticImage a
-        if (que)
+        loadedAnimation <- pixbufAnimationNewFromFile fileToDisplay
+        isStaticImage <- pixbufAnimationIsStaticImage loadedAnimation
+        if ( isStaticImage == True )
         then do
-            WSize ww wh <- getWinSize w
-            newP <- pixbufNewFromFileAtSize f ww wh
-            imageSetFromPixbuf w newP
+            {- Reload image as pixbuf. Yes, it's ineffective -}
+            WindowSize windowWidth windowHeight <- getWindowSize imageWidget
+            loadedPixbuf <- pixbufNewFromFileAtSize
+                                fileToDisplay
+                                windowWidth
+                                windowHeight
+            imageSetFromPixbuf imageWidget loadedPixbuf
         else do
-            imageSetFromAnimation w a
+            imageSetFromAnimation imageWidget loadedAnimation
 
-getWinSize :: Image -> IO WSize
-getWinSize w = do
-    pre_ol <- widgetGetParent w
-    let ol = fromMaybe
-            (error "This error should not be here #1")
-            pre_ol
-    pre_win <- widgetGetParent ol
-    let win = fromMaybe
-            (error "This error should not be here #2")
-            pre_win
-    (w,h) <- windowGetSize (castToWindow win)
-    return $ WSize w h
+{- get size of window hosting image widget. Non-general -}
+getWindowSize :: Image -> IO WindowSize
+getWindowSize imageWidget = do
+    justOverlay <- widgetGetParent imageWidget
+    let overlay = fromMaybe
+            ( error "This error should not be here #1" )
+            justOverlay
+    justWindow <- widgetGetParent overlay
+    let window = fromMaybe
+            ( error "This error should not be here #2" )
+            justWindow
+    ( windowWidth , windowHeight ) <- windowGetSize ( castToWindow window )
+    return $ WindowSize windowWidth windowHeight
 
 {-Constructs list of files-}
-fileList :: IO [ FilePath ]
-fileList = do
+filesFromArgs :: IO [ FilePath ]
+filesFromArgs = do
     args <- getArgs
-    if ( length args == 0 )
+    if ( args == [] )
     then do
-        r <- getCurrentDirectory >>= getDirectoryContents
+        filesList <- getCurrentDirectory >>= getDirectoryContents
         let cleanup = delete "." . delete ".."
-        return $ cleanup r
+        return $ cleanup filesList
     else do
-        getCont args
+        processSingleFile args
 
-getCont :: [ FilePath ] -> IO [ FilePath ]
-getCont [f] = do
-    q <- doesDirectoryExist f
-    if q
+processSingleFile :: [ FilePath ] -> IO [ FilePath ]
+processSingleFile [ singleFile ] = do
+    que <- doesDirectoryExist singleFile
+    if ( que == True )
     then do
-        c <- getDirectoryContents f
-        let ff = FS.decodeString f
+        dirContents <- getDirectoryContents singleFile
+        let dirName = FS.decodeString singleFile
         let cleanup = delete "." . delete ".."
-        let cc = map ( FS.encodeString . FS.append ff . FS.decodeString )
-                     ( cleanup c )
-        getCont $ cleanup cc
+        let filePaths = map ( FS.encodeString . FS.append dirName . FS.decodeString )
+                            ( cleanup dirContents )
+        processSingleFile filePaths
     else
-        return [f]
-getCont other = return other
+        return [ singleFile ]
+processSingleFile manyFiles = return manyFiles
 
+{- Initialises Position IORef from scratch -}
 initFileList :: IO ( IORef Position )
 initFileList = do
-    files' <- fileList
-    let files = sort files'
-    g <- newStdGen
-    let l = length files
-    let s = shuffle' [0..(l-1)] l g
-    let h = head s
-    newIORef $ Position files s h 0 (take l $ repeat True)
+    rawFileList <- filesFromArgs
+    randomGen   <- newStdGen
+    let sortedFileList = sort rawFileList
+    let filesNumber    = length sortedFileList
+    let randomIndices  = shuffle' ( take filesNumber [ 0 .. ] )
+                                    filesNumber
+                                    randomGen
+    newIORef $ Position { files = sortedFileList
+                        , ix_shuffle = randomIndices
+                        , ix_pos = head randomIndices
+                        , ix_rand = 0
+                        , mask = take filesNumber $ repeat True
+                        }
 
-nameCopy :: IORef Position -> IO String
-nameCopy p = do
-    dir <- getCurrentDirectory
-    pp <- readIORef p
-    let i = mod (ix_pos pp) (length $ files pp)
-    let f = files pp !! i
-    return $ FS.encodeString $ FS.append (FS.decodeString dir) (FS.decodeString f)
+{- Extract name of current file from IORef -}
+extractName :: IORef Position -> IO String
+extractName iorefPosition = do
+    currentDir   <- getCurrentDirectory
+    position     <- readIORef iorefPosition
+    let fileList  = files position
+    let safeIndex = mod ( ix_pos position ) ( length fileList )
+    let fileName  = fileList !! safeIndex
+    return $ FS.encodeString $ FS.append ( FS.decodeString currentDir )
+                                         ( FS.decodeString fileName )

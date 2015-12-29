@@ -96,59 +96,60 @@ main = do
 {- END Main -}
 
 keyWrapper :: [Modifier] -> Text -> IORef Position -> Image -> IO ()
-keyWrapper m c p i 
-    |  q == "e"
-    || q == "Right"
-       = nextImg nextSeq p i
+keyWrapper modifier inputChar iorefPosition imageWidget
+    |  recievedChar == "e"
+    || recievedChar == "Right"
+       = nextImg nextSeq iorefPosition imageWidget
 
-    |  q == "w"
-    || q == "Left" 
-       = nextImg prevSeq p i
+    |  recievedChar == "w"
+    || recievedChar == "Left" 
+       = nextImg prevSeq iorefPosition imageWidget
 
-    | q == "p" 
+    | recievedChar == "p" 
       = do
-        x <- nameCopy p
-        setClipboard x
-        let y = FS.OS.encodeString $
-                FS.filename $
-                FS.OS.decodeString x
-        putStrLn y
+        fullFilePath <- extractName iorefPosition
+        setClipboard fullFilePath
+        let fileName = FS.OS.encodeString $
+                       FS.filename $
+                       FS.OS.decodeString fullFilePath
+        putStrLn fileName
 
-    |  q == "space"
-    || q == "Return"
-    || q == "Up"
-       = nextImg nextRan p i
+    |  recievedChar == "space"
+    || recievedChar == "Return"
+    || recievedChar == "Up"
+       = nextImg nextRan iorefPosition imageWidget
 
-    |  q == "BackSpace"
-    || q == "Down"
-       = nextImg prevRan p i
+    |  recievedChar == "BackSpace"
+    || recievedChar == "Down"
+       = nextImg prevRan iorefPosition imageWidget
 
-    | q == "q"
-    || q == "Escape"
+    |  recievedChar == "q"
+    || recievedChar == "Escape"
        = mainQuit
 
-    |  q == "y"
-    || m == [ Control ] && q == "c"
-       = nameCopy p >>= (\x -> putStrLn x >> setClipboard x)
-
-    |  q == "0"
+    |  recievedChar == "y"
+    || modifier == [ Control ] && recievedChar == "c"
        = do
-         ref <- readIORef p
-         writeIORef p ( setZero ref )
-         nextImg nextSeq p i
+         fullFilePath <- extractName iorefPosition
+         putStrLn fullFilePath
+         setClipboard fullFilePath
+
+    |  recievedChar == "0"
+       = do
+         position <- readIORef iorefPosition
+         writeIORef iorefPosition ( setZero position )
+         nextImg nextSeq iorefPosition imageWidget
 
     | otherwise = return ()
-  where q = unpack c
+  where recievedChar = unpack inputChar
 
 setZero :: Position -> Position
-setZero p @ Position { ix_shuffle = shuf
-                     , ix_rand    = ixr  }
+setZero var @ Position { ix_shuffle = shuf }
+      = var { ix_pos = -1
+            , ix_rand = indexOfZero }
 
-    = p { ix_pos = -1
-        , ix_rand = zz }
-
-    where zz = fromMaybe ( error "error #4"       )
-                         ( findIndex (==(0)) shuf )
+    where indexOfZero = fromMaybe ( error "error #4"       )
+                                  ( findIndex (==(0)) shuf )
 
 printNumber :: IORef Position -> IO ()
 printNumber a = do
