@@ -12,16 +12,18 @@ data Position = Position
 type Shift = Position -> Position
 
 nextRan :: Shift
-nextRan pos = pos { ix_rand = ix_rand pos + 1
+nextRan pos = pos { ix_rand = foo
                   , ix_pos = ix_shuffle pos !! safeIndex
                   }
-    where safeIndex = ( mod foo . length . files $ pos )
+    where foo = ( ix_rand pos ) + 1
+          safeIndex = ( mod foo . length . files $ pos )
 
 prevRan :: Shift
-prevRan pos = pos { ix_rand = ix_rand pos - 1
+prevRan pos = pos { ix_rand = foo
                   , ix_pos = ix_shuffle pos !! safeIndex
                   }
-        where safeIndex = ( mod foo . length . files $ pos )
+        where foo = ( ix_rand pos ) - 1
+              safeIndex = ( mod foo . length . files $ pos )
 
 nextSeq :: Shift
 nextSeq pos = pos { ix_pos = ( ix_pos pos ) + 1 }
