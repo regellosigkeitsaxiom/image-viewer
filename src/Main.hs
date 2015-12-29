@@ -90,7 +90,7 @@ main = do
     {- Initializing GUI -}
     widgetShowAll window
     -- Load first image
-    nextImg nextRan position image
+    nextImage nextRan position image
     -- Main GUI thread
     mainGUI
 {- END Main -}
@@ -99,11 +99,11 @@ keyWrapper :: [Modifier] -> Text -> IORef Position -> Image -> IO ()
 keyWrapper modifier inputChar iorefPosition imageWidget
     |  recievedChar == "e"
     || recievedChar == "Right"
-       = nextImg nextSeq iorefPosition imageWidget
+       = nextImage nextSeq iorefPosition imageWidget
 
     |  recievedChar == "w"
     || recievedChar == "Left" 
-       = nextImg prevSeq iorefPosition imageWidget
+       = nextImage prevSeq iorefPosition imageWidget
 
     | recievedChar == "p" 
       = do
@@ -117,11 +117,11 @@ keyWrapper modifier inputChar iorefPosition imageWidget
     |  recievedChar == "space"
     || recievedChar == "Return"
     || recievedChar == "Up"
-       = nextImg nextRan iorefPosition imageWidget
+       = nextImage nextRan iorefPosition imageWidget
 
     |  recievedChar == "BackSpace"
     || recievedChar == "Down"
-       = nextImg prevRan iorefPosition imageWidget
+       = nextImage prevRan iorefPosition imageWidget
 
     |  recievedChar == "q"
     || recievedChar == "Escape"
@@ -138,7 +138,7 @@ keyWrapper modifier inputChar iorefPosition imageWidget
        = do
          position <- readIORef iorefPosition
          writeIORef iorefPosition ( setZero position )
-         nextImg nextSeq iorefPosition imageWidget
+         nextImage nextSeq iorefPosition imageWidget
 
     | otherwise = return ()
   where recievedChar = unpack inputChar

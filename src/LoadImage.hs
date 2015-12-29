@@ -47,18 +47,18 @@ data WindowSize = WindowSize Int Int
 {- Handler of resize event -}
 {- If image is still, it will be ineffectively resized, animation will be left to default handler -}
 redrawImage :: Image -> IORef Position -> IO Bool 
-redrawImage img ref = do
-    imageType <- get img imageStorageType
-    dynResize imageType
-  where dynResize ImagePixbuf = do -- If image is still, process it by yourself
-            forkIO $ postGUIAsync $ nextImg id ref img
+redrawImage imageWidget iorefPosition = do
+    imageType <- get imageWidget imageStorageType
+    dynamicResize imageType
+  where dynamicResize ImagePixbuf = do
+            forkIO $ postGUIAsync $ nextImage id iorefPosition imageWidget
             return True
-        dynResize _ = do -- Leave other types of content to default handler
+        dynamicResize _ = do
             return False
             
-
-nextImg :: Shift -> IORef Position -> Image -> IO ()
-nextImg shift ref img = do
+{- This one needs to be split -}
+nextImage :: Shift -> IORef Position -> Image -> IO ()
+nextImage shift ref img = do
     p <- readIORef ref
     let pos @ Position { files = fs
                        , ix_shuffle = ixs
@@ -76,10 +76,10 @@ nextImg shift ref img = do
                     print ( e :: SomeException )
                     uncheck ref -- Mark file as incorrect
                     extractName ref >>= setClipboard -- Copy its name to buffer
-                    nextImg shift ref img -- Try to load next image with same method
+                    nextImage shift ref img -- Try to load next image with same method
                   )
         else do
-            nextImg shift ref img -- Just load next file
+            nextImage shift ref img -- Just load next file
     else do
         putStrLn "No files in the list"
 
