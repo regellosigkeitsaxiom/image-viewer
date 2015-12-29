@@ -85,13 +85,15 @@ nextImg shift ref img = do
 
 {- Marks correctness mask of current file (by index) as False -}
 uncheck :: IORef Position -> IO ()
-uncheck p = do
-    pp <- readIORef p
-    let Position fs _ ix _ m = pp
-    let ix2 = mod ix (length fs)
-    let (a,b) = splitAt ix2 m
+uncheck iorefPosition = do
+    position <- readIORef iorefPosition
+    --let Position fs _ ix _ m = pp
+    let safeIndex = mod ( ix_pos position ) ( length $ files position )
+    {- Replacing target element with False -}
+    let (a,b) = splitAt safeIndex ( mask position )
     let newMask = a ++ False : ( tail b )
-    writeIORef p ( pp { mask = newMask } )
+    writeIORef iorefPosition
+               position { mask = newMask }
 
 {-Loads specified file to specified Image widged-}
 loadImage :: Image -> FilePath -> IO ()
