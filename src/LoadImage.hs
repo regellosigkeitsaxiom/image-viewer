@@ -1,6 +1,6 @@
 module LoadImage where
 
-{- BEGIN Dependencies -}
+import Shifts
 
 --Error handling
 import Control.Exception ( catch
@@ -41,21 +41,7 @@ import Data.Maybe ( fromMaybe )
 import System.Random
 import System.Random.Shuffle ( shuffle' )
 
-{- END Dependencies -}
-
-data Position = Position 
-    { files :: [ FilePath ] -- List of files
-    , ix_shuffle :: [ Int ] -- Shuffle of indexes
-    , ix_pos :: Int         -- Index of file to display. Refers to `files`
-    , ix_rand :: Int        -- Current position in random list. Refers to `ix_shuffle`
-    , mask :: [ Bool ]      -- Mask of file correctness
-    }
-
 data WSize = WSize Int Int
-
-{- Function which determines which file will be next -}
-type Shift = Position -> Position
-
 
 {- Handler of resize event -}
 {- If image is still, it will be ineffectively resized, animation will be left to default handler -}
@@ -105,27 +91,6 @@ uncheck p = do
     let (a,b) = splitAt ix2 m
     let newMask = a ++ False : ( tail b )
     writeIORef p ( pp { mask = newMask } )
-
-nextRan :: Shift
-nextRan pos = pos { ix_rand = foo
-                  , ix_pos = ix_shuffle pos !! safeIndex
-                  }
-    where foo = ( ix_rand pos ) + 1
-          safeIndex = ( mod foo . length . files $ pos )
-
-prevRan :: Shift
-prevRan pos = pos { ix_rand = foo
-                  , ix_pos = ix_shuffle pos !! safeIndex
-                  }
-        where foo = ( ix_rand pos ) - 1
-              safeIndex = ( mod foo . length . files $ pos )
-
-nextSeq :: Shift
-nextSeq pos = pos { ix_pos = ( ix_pos pos ) + 1 }
-
-prevSeq :: Shift
-prevSeq pos = pos { ix_pos = ( ix_pos pos ) - 1 }
-
 
 {-Loads specified file to specified Image widged-}
 loadImage :: Image -> FilePath -> IO ()

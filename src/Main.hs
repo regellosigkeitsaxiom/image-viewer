@@ -1,6 +1,7 @@
 module Main where
 
 import LoadImage
+import Shifts
 
 {--Error handling--}
 import Control.Exception ( catch
