@@ -58,30 +58,32 @@ redrawImage imageWidget iorefPosition = do
             
 {- This one needs to be split -}
 nextImage :: Shift -> IORef Position -> Image -> IO ()
-nextImage shift ref img = do
-    p <- readIORef ref
-    let pos @ Position { files = fs
-                       , ix_shuffle = ixs
-                       , ix_pos = ixp
-                       , mask = m } = shift p
-    if (or m) -- If there is any correct file
+nextImage shift iorefPosition imageWidget = do
+    position <- readIORef iorefPosition
+    let newPosition = shift position
+    if ( or $ mask newPosition ) -- If there is any correct file
     then do
-        writeIORef ref pos -- Update position
-        let qq = (mod ixp $ length fs )
-        if (m !! qq == True) -- If new requested file is correct too
-        then do
-            let ff = fs !! qq
-            catch ( loadImage img ff )
-                  ( \e -> do
-                    print ( e :: SomeException )
-                    uncheck ref -- Mark file as incorrect
-                    extractName ref >>= setClipboard -- Copy its name to buffer
-                    nextImage shift ref img -- Try to load next image with same method
-                  )
-        else do
-            nextImage shift ref img -- Just load next file
+        writeIORef iorefPosition newPosition -- Update position
+        guardedLoadImage shift iorefPosition imageWidget
     else do
         putStrLn "No files in the list"
+
+guardedLoadImage :: Shift -> IORef Position -> Image -> IO ()
+guardedLoadImage shift iorefPosition imageWidget = do
+    position <- readIORef iorefPosition
+    let safeIndex = mod ( ix_pos position ) ( length $ files position )
+    let fileToLoad = files position !! safeIndex
+    if ( mask position !! safeIndex == False )
+    then do
+        nextImage shift iorefPosition imageWidget
+    else do
+        catch ( loadImage imageWidget fileToLoad )
+              ( \e -> do
+                print ( e :: SomeException )
+                uncheck iorefPosition
+                extractFullName iorefPosition >>= setClipboard
+                nextImage shift iorefPosition imageWidget
+              )
 
 {- Marks correctness mask of current file (by index) as False -}
 uncheck :: IORef Position -> IO ()
@@ -176,8 +178,8 @@ initFileList = do
                         }
 
 {- Extract name of current file from IORef -}
-extractName :: IORef Position -> IO String
-extractName iorefPosition = do
+extractFullName :: IORef Position -> IO String
+extractFullName iorefPosition = do
     currentDir   <- getCurrentDirectory
     position     <- readIORef iorefPosition
     let fileList  = files position

@@ -107,7 +107,7 @@ keyWrapper modifier inputChar iorefPosition imageWidget
 
     | recievedChar == "p" 
       = do
-        fullFilePath <- extractName iorefPosition
+        fullFilePath <- extractFullName iorefPosition
         setClipboard fullFilePath
         let fileName = FS.OS.encodeString $
                        FS.filename $
@@ -130,7 +130,7 @@ keyWrapper modifier inputChar iorefPosition imageWidget
     |  recievedChar == "y"
     || modifier == [ Control ] && recievedChar == "c"
        = do
-         fullFilePath <- extractName iorefPosition
+         fullFilePath <- extractFullName iorefPosition
          putStrLn fullFilePath
          setClipboard fullFilePath
 
