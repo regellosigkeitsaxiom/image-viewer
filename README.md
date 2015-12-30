@@ -11,7 +11,7 @@ Also your system will need GTK3 and `which` utility.
 ## How to launch
 It does not have any GUI whatsoever and intended to be invoked from command line.
 It does not have any options and treats all input as a list of files.
-If there is only one file, and it is a directory, it will descend and load all files from it. It is recursive.
+If there is only one file, and it is a directory, it will descend and load all files from it; it is recursive.
 If there aren't any, it loads all files from current directory.
 
 ## What to do with it
@@ -26,8 +26,8 @@ Note that moving sequentially will not affect random order, so `space, e, e, bac
 
 `p` prints file name to `stdout`, also copies its full path into system buffer
 
-`y` and `Ctrl-c` copies full path to file into system buffer, als prints it to `stdout`
+`y` and `Ctrl-c` copies full path to file into system buffer, also prints it to `stdout`
 
-`q` and `ESC` exits program.d
+`q` and `ESC` exits program.
 
 `0` will return image sequence to the first image. If you want to view all images in sequence, press `0` after the start and then use `e` and `w` to navigate.
