@@ -2,6 +2,7 @@ module Main where
 
 import LoadImage
 import Shifts
+import FileList
 
 {--Error handling--}
 import Control.Exception ( catch
@@ -38,8 +39,6 @@ import Data.Text ( unpack
                  , Text
                  )
 
-fromString = pack
-
 -- TODO:
 -- Zooms needed*:
 --  fit,
@@ -64,9 +63,12 @@ fromString = pack
 {- BEGIN Main -}
 main :: IO ()
 main = do
-    {- Preparing list of files -}
     position <- initFileList
     printSummary position
+    launchGUI position
+
+launchGUI :: IORef Position -> IO ()
+launchGUI position = do
     {- Creating GUI -}
     initGUI
     window  <- windowNew
@@ -93,7 +95,6 @@ main = do
     nextImage nextRan position image
     -- Main GUI thread
     mainGUI
-{- END Main -}
 
 keyWrapper :: [Modifier] -> Text -> IORef Position -> Image -> IO ()
 keyWrapper modifier inputChar iorefPosition imageWidget

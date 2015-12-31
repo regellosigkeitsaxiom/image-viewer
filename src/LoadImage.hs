@@ -11,7 +11,10 @@ import Control.Concurrent ( forkIO )
 import Control.Monad ( when )
 
 --State variables
-import Data.IORef
+import Data.IORef ( IORef
+                  , readIORef
+                  , writeIORef
+                  )
 
 --GTK bindings
 import Graphics.UI.Gtk
@@ -19,9 +22,6 @@ import Graphics.UI.Gtk.Gdk.PixbufAnimation
 
 --System buffer, for yanking filename
 import System.Hclip ( setClipboard )
-
-
-import System.Environment (getArgs)
 
 --Working with filesystem
 import System.Directory ( getCurrentDirectory
@@ -36,10 +36,6 @@ import qualified Filesystem.Path.CurrentOS as FS
 --Some list processing
 import Data.List ( sort, delete )
 import Data.Maybe ( fromMaybe )
-
---Random shuffle
-import System.Random
-import System.Random.Shuffle ( shuffle' )
 
 {- WindowSize width height -}
 data WindowSize = WindowSize Int Int
@@ -137,50 +133,6 @@ getWindowSize imageWidget = do
             justWindow
     ( windowWidth , windowHeight ) <- windowGetSize ( castToWindow window )
     return $ WindowSize windowWidth windowHeight
-
-{-Constructs list of files-}
-filesFromArgs :: IO [ FilePath ]
-filesFromArgs = do
-    args <- getArgs
-    if ( args == [] )
-    then do
-        filesList <- getCurrentDirectory >>= getDirectoryContents
-        let cleanup = delete "." . delete ".."
-        return $ cleanup filesList
-    else do
-        processSingleFile args
-
-processSingleFile :: [ FilePath ] -> IO [ FilePath ]
-processSingleFile [ singleFile ] = do
-    que <- doesDirectoryExist singleFile
-    if ( que == True )
-    then do
-        dirContents <- getDirectoryContents singleFile
-        let dirName = FS.decodeString singleFile
-        let cleanup = delete "." . delete ".."
-        let filePaths = map ( FS.encodeString . FS.append dirName . FS.decodeString )
-                            ( cleanup dirContents )
-        processSingleFile filePaths
-    else
-        return [ singleFile ]
-processSingleFile manyFiles = return manyFiles
-
-{- Initialises Position IORef from scratch -}
-initFileList :: IO ( IORef Position )
-initFileList = do
-    rawFileList <- filesFromArgs
-    randomGen   <- newStdGen
-    let sortedFileList = sort rawFileList
-    let filesNumber    = length sortedFileList
-    let randomIndices  = shuffle' ( take filesNumber [ 0 .. ] )
-                                    filesNumber
-                                    randomGen
-    newIORef $ Position { files = sortedFileList
-                        , ix_shuffle = randomIndices
-                        , ix_pos = head randomIndices
-                        , ix_rand = 0
-                        , mask = take filesNumber $ repeat True
-                        }
 
 {- Extract name of current file from IORef -}
 extractFullName :: IORef Position -> IO String
