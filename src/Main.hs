@@ -66,7 +66,7 @@ main :: IO ()
 main = do
     {- Preparing list of files -}
     position <- initFileList
-    printNumber position
+    printSummary position
     {- Creating GUI -}
     initGUI
     window  <- windowNew
@@ -147,12 +147,11 @@ setZero :: Position -> Position
 setZero var @ Position { ix_shuffle = shuf }
       = var { ix_pos = -1
             , ix_rand = indexOfZero }
-
     where indexOfZero = fromMaybe ( error "error #4"       )
                                   ( findIndex (==(0)) shuf )
 
-printNumber :: IORef Position -> IO ()
-printNumber a = do
+printSummary :: IORef Position -> IO ()
+printSummary a = do
     f <- readIORef a
     putStrLn $  "Opening "
              ++ show ( length $ files f )
