@@ -105,19 +105,24 @@ loadImage imageWidget fileToDisplay = do
     then
         error $ fileToDisplay ++ " is a directory, skipping"
     else do
-        loadedAnimation <- pixbufAnimationNewFromFile fileToDisplay
-        isStaticImage <- pixbufAnimationIsStaticImage loadedAnimation
-        if ( isStaticImage == True )
-        then do
-            {- Reload image as pixbuf. Yes, it's ineffective -}
-            WindowSize windowWidth windowHeight <- getWindowSize imageWidget
-            loadedPixbuf <- pixbufNewFromFileAtSize
-                                fileToDisplay
-                                windowWidth
-                                windowHeight
-            imageSetFromPixbuf imageWidget loadedPixbuf
-        else do
-            imageSetFromAnimation imageWidget loadedAnimation
+        loadCorrectImage imageWidget fileToDisplay
+
+loadCorrectImage :: Image -> FilePath -> IO ()
+loadCorrectImage imageWidget fileToDisplay = do
+    loadedAnimation <- pixbufAnimationNewFromFile fileToDisplay
+    isStaticImage <- pixbufAnimationIsStaticImage loadedAnimation
+    if ( isStaticImage == False )
+    then do
+        imageSetFromAnimation imageWidget loadedAnimation
+    else do
+        {- Reload image as pixbuf. Yes, it's efficiency is poor -}
+        WindowSize windowWidth windowHeight <- getWindowSize imageWidget
+        loadedPixbuf <- pixbufNewFromFileAtSize
+                            fileToDisplay
+                            windowWidth
+                            windowHeight
+        imageSetFromPixbuf imageWidget loadedPixbuf
+    
 
 {- get size of window hosting image widget. Non-general -}
 getWindowSize :: Image -> IO WindowSize
