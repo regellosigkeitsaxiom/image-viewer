@@ -26,7 +26,7 @@ Note that moving sequentially will not affect random order, so `space, e, e, bac
 
 `p` prints file name to `stdout`, also copies its full path into system buffer
 
-`y` and `Ctrl-c` copies full path to file into system buffer, also prints it to `stdout`
+`y` copies full path to file into system buffer, also prints it to `stdout`
 
 `q` and `ESC` exits program.
 

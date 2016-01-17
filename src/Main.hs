@@ -129,7 +129,6 @@ keyWrapper modifier inputChar iorefPosition imageWidget
        = mainQuit
 
     |  recievedChar == "y"
-    || modifier == [ Control ] && recievedChar == "c"
        = do
          fullFilePath <- extractFullName iorefPosition
          putStrLn fullFilePath
