@@ -4,7 +4,7 @@ Image viewer made for my requirements.
 ## How to build
 You will need ghc, [stack](https://github.com/commercialhaskell/stack.git) and probably cabal
 
-Also your system will need GTK3 and `which` utility.
+Also your system will need GTK3.
 
 `stack build` in root directory will build the program.
 
