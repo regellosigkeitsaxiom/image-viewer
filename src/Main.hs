@@ -3,6 +3,7 @@ module Main where
 import LoadImage
 import Shifts
 import FileList
+import System.Directory ( removeFile )
 
 {--Error handling--}
 import Control.Exception ( catch
@@ -127,6 +128,12 @@ keyWrapper modifier inputChar iorefPosition imageWidget
     |  recievedChar == "q"
     || recievedChar == "Escape"
        = mainQuit
+
+    |  recievedChar == "Delete"
+       = do
+         fullFilePath <- extractFullName iorefPosition
+         removeFile fullFilePath
+         nextImage nextSeq iorefPosition imageWidget
 
     |  recievedChar == "y"
        = do
