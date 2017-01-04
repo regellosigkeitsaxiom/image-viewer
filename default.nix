@@ -9,7 +9,7 @@ let
       , text, transformers
       }:
       mkDerivation {
-        pname = "image-viewer";
+        pname = "ivie";
         version = "0.1.0.0";
         src = ./.;
         isLibrary = false;
@@ -18,7 +18,7 @@ let
           base directory glib gtk2hs-buildtools gtk3 Hclip random
           random-shuffle system-filepath text transformers
         ];
-        homepage = "http://github.com/githubuser/image-viewer#readme";
+        homepage = "http://github.com/regellosigkeitsaxiom/ivie#readme";
         description = "Simple project template from stack";
         license = stdenv.lib.licenses.bsd3;
       };

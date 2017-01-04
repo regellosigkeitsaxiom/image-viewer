@@ -12,7 +12,7 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 
-executable image-viewer
+executable ivie
   other-modules:       LoadImage
                      , FileList
                      , Shifts
