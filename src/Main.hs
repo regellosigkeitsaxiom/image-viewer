@@ -42,8 +42,6 @@ import Data.Text ( unpack
 
 -- TODO:
 -- Zooms needed*:
---  fit,
---  fill,
 --  width+vscroll (maybe with '+' '-' and 'd' 's'),
 --  free with scrollbars
 -- *no zooms for animations
@@ -65,11 +63,12 @@ import Data.Text ( unpack
 main :: IO ()
 main = do
     position <- initFileList
+    zoom <- newIORef ZoomFill
     printSummary position
-    launchGUI position
+    launchGUI position zoom
 
-launchGUI :: IORef Position -> IO ()
-launchGUI position = do
+launchGUI :: IORef Position -> IORef Zoom -> IO ()
+launchGUI position zoom = do
     {- Creating GUI -}
     initGUI
     window  <- windowNew
@@ -77,7 +76,7 @@ launchGUI position = do
     overlay <- overlayNew
     overlayAdd overlay image
     containerAdd window overlay
-    set window [ windowTitle := "My experiment"
+    set window [ windowTitle := "ivie"
                , containerBorderWidth := 0 ]
     {- Event handlers -}
     -- Exit
@@ -86,26 +85,50 @@ launchGUI position = do
     on window keyPressEvent $ tryEvent $ do
         e <- eventModifier
         k <- eventKeyName
-        liftIO $ keyWrapper e k position image
+        liftIO $ keyWrapper e k position image zoom
     -- Window resize
     on window configureEvent $ liftIO $ do
-        redrawImage image position
+        redrawImage image position zoom
     {- Initializing GUI -}
     widgetShowAll window
     -- Load first image
-    nextImage nextRan position image
+    nextImage nextRan position image zoom
     -- Main GUI thread
     mainGUI
 
-keyWrapper :: [Modifier] -> Text -> IORef Position -> Image -> IO ()
-keyWrapper modifier inputChar iorefPosition imageWidget
+keyWrapper :: [Modifier] -> Text -> IORef Position -> Image -> IORef Zoom -> IO ()
+keyWrapper modifier inputChar iorefPosition imageWidget zoom
+    |  recievedChar == "s"
+       = do
+         z <- readIORef zoom
+         case z of
+           ZoomWidth offset -> do
+             atomicModifyIORef zoom (\_->(ZoomWidth$offset+200,()))
+             nextImage id iorefPosition imageWidget zoom
+           _ -> return ()
+
+    |  recievedChar == "d"
+       = do
+         z <- readIORef zoom
+         case z of
+           ZoomWidth offset -> do
+             atomicModifyIORef zoom (\_->(ZoomWidth$offset-200,()))
+             nextImage id iorefPosition imageWidget zoom
+           _ -> return ()
+
+    |  recievedChar == "z"
+       = do
+         atomicModifyIORef zoom (\x -> (nextZoom x,()))
+         nextImage id iorefPosition imageWidget zoom
+         readIORef zoom >>= \z -> putStrLn $ "Zoom: " ++ show z
+
     |  recievedChar == "e"
     || recievedChar == "Right"
-       = nextImage nextSeq iorefPosition imageWidget
+       = nextImage nextSeq iorefPosition imageWidget zoom
 
     |  recievedChar == "w"
     || recievedChar == "Left" 
-       = nextImage prevSeq iorefPosition imageWidget
+       = nextImage prevSeq iorefPosition imageWidget zoom
 
     | recievedChar == "p" 
       = do
@@ -119,11 +142,11 @@ keyWrapper modifier inputChar iorefPosition imageWidget
     |  recievedChar == "space"
     || recievedChar == "Return"
     || recievedChar == "Up"
-       = nextImage nextRan iorefPosition imageWidget
+       = nextImage nextRan iorefPosition imageWidget zoom
 
     |  recievedChar == "BackSpace"
     || recievedChar == "Down"
-       = nextImage prevRan iorefPosition imageWidget
+       = nextImage prevRan iorefPosition imageWidget zoom
 
     |  recievedChar == "q"
     || recievedChar == "Escape"
@@ -133,7 +156,7 @@ keyWrapper modifier inputChar iorefPosition imageWidget
        = do
          fullFilePath <- extractFullName iorefPosition
          removeFile fullFilePath
-         nextImage nextSeq iorefPosition imageWidget
+         nextImage nextSeq iorefPosition imageWidget zoom
 
     |  recievedChar == "y"
        = do
@@ -145,7 +168,7 @@ keyWrapper modifier inputChar iorefPosition imageWidget
        = do
          position <- readIORef iorefPosition
          writeIORef iorefPosition ( setZero position )
-         nextImage nextSeq iorefPosition imageWidget
+         nextImage nextSeq iorefPosition imageWidget zoom
 
     | otherwise = return ()
   where recievedChar = unpack inputChar
