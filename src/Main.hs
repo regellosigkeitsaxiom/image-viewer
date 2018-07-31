@@ -118,7 +118,20 @@ keyWrapper modifier inputChar iorefPosition imageWidget zoom
 
     |  recievedChar == "z"
        = do
-         atomicModifyIORef zoom (\x -> (nextZoom x,()))
+         atomicModifyIORef zoom (\_ -> (ZoomFit,()))
+         nextImage id iorefPosition imageWidget zoom
+         readIORef zoom >>= \z -> putStrLn $ "Zoom: " ++ show z
+
+    |  recievedChar == "x"
+       = do
+         atomicModifyIORef zoom (\_ -> (ZoomFill,()))
+         nextImage id iorefPosition imageWidget zoom
+         readIORef zoom >>= \z -> putStrLn $ "Zoom: " ++ show z
+
+
+    |  recievedChar == "c"
+       = do
+         atomicModifyIORef zoom (\_ -> (ZoomWidth 0,()))
          nextImage id iorefPosition imageWidget zoom
          readIORef zoom >>= \z -> putStrLn $ "Zoom: " ++ show z
 

@@ -52,12 +52,12 @@ initFileList :: IO ( IORef Position )
 initFileList = do
     rawFileList <- filesFromArgs
     randomGen   <- newStdGen
-    let sortedFileList = reverse $ sort rawFileList
+    let sortedFileList = sort rawFileList
     let filesNumber    = length sortedFileList
     let randomIndices  = shuffle' ( take filesNumber [ 0 .. ] )
                                     filesNumber
                                     randomGen
-    newIORef $ Position { files = sortedFileList
+    newIORef $ Position { files = rawFileList --sortedFileList
                         , ix_shuffle = randomIndices
                         , ix_pos = head randomIndices
                         , ix_rand = 0
